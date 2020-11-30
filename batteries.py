@@ -1,20 +1,28 @@
-import RPi.GPIO as GPIO
-from time import sleep, time
-from datetime import datetime as dt
-from daqhats import mcc118, OptionFlags, HatIDs, HatError, hat_list
-import subprocess
-import os
-import h5py
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    print('only DummyBatteries available')
+    pass
 import logging
+log = logging.getLogger(__name__)
 
+class DummyBatteries:
+    def __init__(self):
+        self.state = [True, True]  # default to measure mode (I'm assuming GPIO high is true
+
+    def measure(self):
+        log.debug('Batteries connected to amplifier')
+        self.state = [True, True]
+
+    def charge(self):
+        log.debug('Batteries connected to charger')
+        self.state = [False, False]
 
 class Battery:
-    battery_nr = None
-    gpios = None
     gpios_available = {0: [19, 16],
                        1: [20, 21]}
 
-    def __init__(self, battery_nr=0):
+    def __init__(self, battery_nr):
         if not (GPIO.getmode() == GPIO.BCM):
             GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)

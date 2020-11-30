@@ -320,18 +320,10 @@ class VibrationPi:
 
 
 if __name__ == '__main__':
-    # logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
-    #                     level=logging.DEBUG,
-    #                     format='%(asctime)s %(message)s')
+    logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
+                        level=logging.DEBUG,
+                        format='%(asctime)s %(message)s')
 
-    with open('./config.json', 'r') as f:
-        config = json.load(f)
-    config['sampling_rate'] = 1000.
-    config['settling_time'] = 0.0
-    config['measurement_time'] = 0.5
-    config['measurement_period'] = 1.
-    config['token'] = "WE0PaAvJEuqHhBDy6HH0oVf69UmBfTsWvDO2Khy3r258r0t6nG5oIsqw8ut_YLGMhA8WHL2fibepl38PpfsLGA=="
-    config['org'] = 'ETH'
-
-    V = VibrationPi(config)
+    config_file = './config_d.json'
+    V = VibrationPi(config_file)
     V.measure_continuously()
