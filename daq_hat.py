@@ -1,41 +1,30 @@
+import time
+from daqhats import mcc118, OptionFlags, HatIDs, HatError, hat_list
+
+import logging
+log = logging.getLogger(__name__)
+
+
 class Hat:
-    channels = None
-    samples_per_channel = None
-    scan_rate = None
-    address = None
-    actual_scan_rate = None
-    hat = None
-    options = None
-    channel_mask = None
-    num_channels = None
-    status = None
     timeout = 5.0
 
-    def __init__(self, channels=[0], samples_per_channel=1000, scan_rate=100000):
+    def __init__(self, channels=None, samples_per_channel=1000, sampling_rate=100000):
+        if channels is None:
+            channels = [0]
         self.channels = channels
         self.channel_mask = self.chan_list_to_mask(self.channels)
         self.num_channels = len(self.channels)
         self.samples_per_channel = samples_per_channel
-        self.scan_rate = scan_rate
+        self.sampling_rate = sampling_rate
         self.options = OptionFlags.DEFAULT
+        self.status = None
 
         self.address = self.select_hat_device(HatIDs.MCC_118)
         self.mcc118 = mcc118(self.address)
 
-        print('\nSelected MCC 118 HAT device at address', self.address)
+        log.debug('Selected MCC 118 HAT device at address: {}'.format(self.address))
 
-        self.actual_scan_rate = self.mcc118.a_in_scan_actual_rate(self.num_channels, self.scan_rate)
-
-        print('\nMCC 118 continuous scan example')
-        print('    Functions demonstrated:')
-        print('         mcc118.a_in_scan_start')
-        print('         mcc118.a_in_scan_read')
-        print('    Channels: ', end='')
-        print(', '.join([str(chan) for chan in self.channels]))
-        print('    Requested scan rate: ', self.scan_rate)
-        print('    Actual scan rate: ', self.actual_scan_rate)
-        print('    Samples per channel', self.samples_per_channel)
-        print('    Options: ', self.enum_mask_to_string(OptionFlags, self.options))
+        self.actual_sampling_rate = self.mcc118.a_in_scan_actual_rate(self.num_channels, self.sampling_rate)
 
     def chan_list_to_mask(self, chan_list):
         chan_mask = 0
@@ -74,20 +63,38 @@ class Hat:
         return selected_hat_address
 
     def measurement(self):
-        print('Starting measurement scan in background.')
-        self.mcc118.a_in_scan_start(self.channel_mask, self.samples_per_channel, self.scan_rate, self.options)
-        while (True):
-            sleep(1)
+        log.debug('Starting measurement scan in background.')
+        self.mcc118.a_in_scan_start(self.channel_mask, self.samples_per_channel, self.sampling_rate, self.options)
+        while True:
+            time.sleep(1)
             self.status = self.mcc118.a_in_scan_status()
             if not self.status.running:
-                print('Measurement finished. Reading data from buffer.')
+                log.debug('Measurement finished. Reading data from buffer.')
                 break
             elif self.status.hardware_overrun:
-                print('Hardware overrun during measurement.')
+                log.warning('Hardware overrun during measurement.')
             elif self.status.buffer_overrun:
-                print('Buffer overrun during measurement.')
+                log.warning('Buffer overrun during measurement.')
 
         data = self.mcc118.a_in_scan_read(-1, self.timeout).data
-        print('Data successfully read. Cleaning up buffer.')
+        log.debug('Data successfully read. Cleaning up buffer.')
         self.mcc118.a_in_scan_cleanup()
         return data
+
+
+class DummyHat(Hat):
+    def __init__(self, channels=None, samples_per_channel=1000, sampling_rate=100000):
+        if channels is None:
+            channels = [0]
+        self.channels = channels
+        self.channel_mask = None
+        self.num_channels = len(self.channels)
+        self.samples_per_channel = samples_per_channel
+        self.sampling_rate = sampling_rate
+        self.actual_sampling_rate = sampling_rate
+        self.address = 'dummy'
+
+    def measurement(self):
+        from numpy.random import random
+        time.sleep(self.samples_per_channel/self.sampling_rate)
+        return 1.1+random(int(self.samples_per_channel))

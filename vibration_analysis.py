@@ -1,101 +1,288 @@
-class VibrationPi:
-    batteries = None
-    hat = None
-    data = None
-    timestamp = time()
-    save_location = '/media/vibration/d'
-    temp_save_location = '/home/pi/Documents/temp_file_storage'
-    reinit_counter = 0
-    log_level = logging.DEBUG
-    log_location = '/home/pi/Documents'
+import time
+from datetime import datetime, timedelta
+import subprocess
+import os
+import h5py
+import json
+from influxdb_client import InfluxDBClient
+import batteries
+import daq_hat
+import numpy as np
+import pandas as pd
+from derive_psd import derive_psd, integrate_peaks
 
-    def __init__(self, channels=[0], samples_per_channel=1000, scan_rate=100000):
-        logging.basicConfig(filename=os.path.join(self.log_location, 'vibration_logger.log'),
-                            level=self.log_level,
-                            format='%(asctime)s %(message)s')
-        self.batteries = Batteries()
+import logging
+log = logging.getLogger(__name__)
 
-        for i in range(10):
-            if self.server_connection:
-                break
-            sleep(10)
-        self.mount_network_drive()
-        self.hat = Hat(channels, samples_per_channel, scan_rate)
 
-    @property
-    def network_drive_mounted(self):
+class CerberousConnection:
+    def __init__(self, network_drive_location):
+        self.network_drive_location = network_drive_location
+        self.connect_to_server()
+
+
+    @staticmethod
+    def connect_to_server():
+        retries = 10
+        while not os.system('ping -c 1 cerberous > /dev/null'):
+            log.warning('Connection to cerberous failed, will try again')
+            retries -= 1
+            if not retries:
+                raise RuntimeError('Failed to connect to cerberous')
+            time.sleep(5)
+
+    @staticmethod
+    def check_connection():
         mounts = subprocess.check_output('mount').split(b'\n')
-        contains_vibration = any([b'vibration' in m for m in mounts])
-        return contains_vibration
+        return any([b'vibration' in m for m in mounts])
 
     def mount_network_drive(self):
-        if not self.network_drive_mounted:
-            logging.debug('Network storage was not mounted.')
-            os.system('mount /media/vibration')
-            if not self.network_drive_mounted:
-                logging.debug('Network storage mount failed.')
-            else:
-                logging.debug('Network storage was mounted.')
+        if self.check_connection():
+            log.debug('Network storage is already available')
+            return
+        # Mount the drive
+        os.system('mount {}'.format(self.network_drive_location))
+
+        # Check that it was successfully mounted
+        retries = 10
+        while not self.check_connection():
+            log.warning('Network storage was not mounted, will try again')
+            time.sleep(2)
+            os.system('mount {}'.format(self.network_drive_location))
+            retries -= 1
+            if not retries:
+                raise RuntimeError('Failed to mount network drive')
+
+class DummyCerberousConnection(CerberousConnection):
+    @staticmethod
+    def connect_to_server():
+        return
+
+    @staticmethod
+    def check_connection():
+        return True
+
+class VibrationPi:
+    '''
+    Class that handle the Raspberry Pi tunring on and doing its shit.
+    Has:
+    batteries, daqhat, measurement queue
+    notion of where to write to
+    knows how to do an fft
+    reads a json file with config at startup.
+    '''
+    def __init__(self, config):
+        '''
+        :param config: dict or filepath containing json file. Contains settings for saving data, ...
+        '''
+
+        # Read config params
+        if type(config) is dict:
+            self.config = config
         else:
-            logging.debug('Network was already mounted.')
+            with open(config, 'r') as f:
+                self.config = json.load(f)
 
-    def save_data(self):
-        if not self.network_drive_mounted:
-            self.mount_network_drive()
-        if self.network_drive_mounted:
-            with h5py.File(os.path.join(self.save_location, self.ts_month + '.h5'), 'a') as h5_file:
-                ts_date = self.ts_date
-                if ts_date not in h5_file:
-                    h5_file.create_group(ts_date)
+        # General config
+        self.location = self.config.get('location', 'D')  # 'D' or 'M'
+        self.write_to = self.config.get('write_to', 'both')  # whether to write to InfluxDB or h5py or both
 
-                ds = h5_file[ts_date].create_dataset(self.ts_minute, data=self.data)
-                ds.attrs['channels'] = self.hat.channels
-                ds.attrs['samples_per_channel'] = self.hat.samples_per_channel
-                ds.attrs['scan_rate'] = self.hat.scan_rate
-                ds.attrs['address'] = self.hat.address
-                ds.attrs['actual_scan_rate'] = self.hat.actual_scan_rate
-                ds.attrs['timestamp'] = self.ts_datetime
+        # measurement related config
+        self.sampling_rate = self.config.get('sampling_rate', 1000.0)  # DAQ sampling rate
+        self.settling_time = self.config.get('settling_time', 5.0)  # settling time in minutes
+        self.measurement_duration = self.config.get('measurement_time', 10.0)  # duration of the minutes
+        self.measurement_period = self.config.get('measurement_period', 30.0)  # time between measurements in mins
+        if self.measurement_period > 60.0:
+            log.warning('Desired period too long, reduced to 60.0')
+            self.measurement_period = 60.0
+        if self.measurement_duration + self.settling_time > self.measurement_period:
+            log.warning('Measurements too frequent, some will be skipped')
+
+        # spectrum related parameters
+        self.subdivision_factor = self.config.get('subdivision_factor', 32)  # 32 is fitting for 5 min measurements
+
+        # InfluxDB related parameters
+        self.analysis_windows = self.config['analysis_windows']  # no default value here
+        self.token = self.config['token']
+        self.org = self.config.get('org', 'PhotonicsVibration')
+        self.time_trace_bucket = self.config.get('time_trace_bucket', 'TimeTraceData')
+        self.spectrum_bucket = self.config.get('spectrum_bucket', 'SpectrumData')
+        self.peaks_bucket = self.config.get('peaks_bucket', 'IntegratedPeaksData')
+        self.url = self.config.get('url', 'http://129.132.1.229:8086')
+        if self.write_to in ['InfluxDB', 'both']:
+            self.open_influx_client()  # defines self.client and self.write_api attributes
+
+        # h5py related parameters
+        self.network_drive = self.config.get('network_drive', '/media/vibration')
+        self.save_location = self.config.get('save_location', '/media/vibration/d')
+        self.temp_save_location = self.config.get('temp_save_location', '/home/pi/Documents/temp_file_storage')
+        if self.write_to in ['h5py', 'both']:
+            self.cerberous = CerberousConnection(self.network_drive)
+
+        # initialize batteries and hat
+        self.batteries = batteries.Batteries()
+        self.hat = daq_hat.Hat(channels=[0],
+                               samples_per_channel=self.sampling_rate * self.measurement_duration * 60.0,
+                               sampling_rate=self.sampling_rate)
+
+        # Initialize timing related attributes
+        self.update_next_start_time()
+        self.timestamp = datetime.now()
+
+    def open_influx_client(self):
+        self.client = InfluxDBClient(url=self.url, token=self.token)
+        self.write_api = self.client.write_api()
+
+    def update_next_start_time(self):
+        '''
+        Sets next_start_time to the minutes at which the next measurement sequence should start
+        '''
+        current_time = datetime.now()
+        # Number of minutes after the current hour that the next measurement should take place
+        next_minute = ((current_time + timedelta(minutes=self.settling_time)).timetuple().tm_min //
+                       self.measurement_period + 1) * self.measurement_period
+
+        # datetime object of when the next measurement should take place
+        self.next_start_time = (current_time + timedelta(hours=next_minute // 60)) \
+            .replace(minute=int(next_minute % 60), second=0, microsecond=0)
+
+    def wait_for_start(self):
+        while datetime.now() + timedelta(minutes=self.settling_time) < self.next_start_time:
+            time.sleep(1)
+
+    def measurement_sequence(self):
+        self.wait_for_start()
+        measurement_done = False
+        retries = 10
+        while not measurement_done:
+            try:
+                self.batteries.measure()
+                time.sleep(self.settling_time * 60.0)
+                timestamp = datetime.now()
+                data = self.hat.measurement()
+
+                self.batteries.charge()
+                measurement_done = True
+            except Exception as e:
+                retries -= 1
+                if not retries:
+                    log.warning('Measurement failed too often, rebooting system')
+                    time.sleep(10)
+                    os.system('reboot')
+                log.warning('{} during measurement, retrying'.format(e))
+                time.sleep(60)
+                self.__init__(self.config)
+        self.save_data(data, timestamp)
+
+    def measure_continuously(self):
+        while True:
+            self.measurement_sequence()
+            self.update_next_start_time()
+
+    def save_data(self, data, timestamp):
+        if self.write_to in ['InfluxDB', 'both']:
+            # open connection to server
+            # (I don't think it hurts to repeat this, but weirdness can happen it it's  been open for too long)
+            self.open_influx_client()
+
+            # Write time-traces to time_trace_bucket
+            self.write_time_trace_to_influx(data, timestamp)
+
+            # calculate psd, and write psd to spectrum_bucket
+            frequency, spectrum = derive_psd(data, self.hat.sampling_rate, method='welch',
+                                             subdivision_factor=self.subdivision_factor)
+            clip = 2  # drop DC part of spectrum
+            self.write_spectrum_to_influx(frequency[clip:], spectrum[clip:], timestamp)
+
+            # integrate peaks and write to peaks_bucket
+            integrated_peaks = integrate_peaks(frequency, spectrum, self.analysis_windows)
+            self.write_peak_data_to_influx(integrated_peaks, timestamp)
+
+        elif self.write_to in ['h5py', 'both']:
+            try:
+                self.cerberous.mount_network_drive()
+                save_to = self.save_location
+            except RuntimeError:
+                log.warning('Connection to network drive failed, data will be saved locally')
+                save_to = self.temp_save_location
+
+            filename = timestamp.strftime('%Y-%m') + '.h5'
+            save_to = os.path.join(save_to, filename)
+
+            with h5py.File(save_to, 'a') as f:
+                group = timestamp.strftime('%Y-%m-%d')
+                if group not in f:
+                    f.create_group(group)
+
+                dset_name = timestamp.strftime('%H-%M')
+                dset = f[group].create_dataset(dset_name, data=data)
+                dset.attrs['channels'] = self.hat.channels
+                dset.attrs['samples_per_channel'] = self.hat.samples_per_channel
+                dset.attrs['sampling_rate'] = self.hat.sampling_rate
+                dset.attrs['address'] = self.hat.address
+                dset.attrs['actual_sampling_rate'] = self.hat.actual_sampling_rate
+                dset.attrs['timestamp'] = timestamp.strftime('%Y-%m-%d:%H-%M-%S')
 
             # if there are any temporary data files, merge them with the main one.
             self.merge_hdf_files()
 
-
         else:
-            logging.debug('Connection to server timed out. Data saved locally instead.')
+            raise ValueError('Unknown saving method {}'.format(self.write_to))
 
-            with h5py.File(os.path.join(self.temp_save_location, self.ts_month + '.h5'), 'a') as h5_file:
-                ts_date = self.ts_date
-                if ts_date not in h5_file:
-                    h5_file.create_group(ts_date)
+    def write_time_trace_to_influx(self, data, timestamp):
+        # get timestamp array in ns (do this before pd.Dataframe to avoid issues with DST)
+        start_timestamp = timestamp.timestamp() * 1e9
+        step = 1e9 / self.hat.actual_sampling_rate
+        timestamps = np.arange(len(data)) * step + start_timestamp
+        timestamps = timestamps.astype(int)
 
-                ds = h5_file[ts_date].create_dataset(self.ts_minute, data=self.data)
-                ds.attrs['channels'] = self.hat.channels
-                ds.attrs['samples_per_channel'] = self.hat.samples_per_channel
-                ds.attrs['scan_rate'] = self.hat.scan_rate
-                ds.attrs['address'] = self.hat.address
-                ds.attrs['actual_scan_rate'] = self.hat.actual_scan_rate
-                ds.attrs['timestamp'] = self.ts_datetime
-            # raise ConnectionError('Connection to server timed out. Couldn\'t save data.')
+        # Make string tags to simplify splitting apart measurements when querying data
+        time_str = timestamp.strftime('%H-%M')
+        date_str = timestamp.strftime('%Y-%m-%d')
 
-    @property
-    def ts_date(self):
-        return dt.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
+        # Build DataFrame
+        df = pd.DataFrame({'time':timestamps, 'sensor_output':data,
+                          'date_string':date_str, 'time_string':time_str, 'location':self.location})
+        df.set_index('time', inplace=True)
 
-    @property
-    def ts_month(self):
-        return dt.fromtimestamp(self.timestamp).strftime('%Y-%m')
+        # Upload DataFrame
+        self.write_api.write(bucket=self.time_trace_bucket, org=self.org, record=df,
+                             data_frame_measurement_name='accelerometer_data',
+                             data_frame_tag_columns=['date_string', 'time_string', 'location'])
 
-    @property
-    def ts_minute(self):
-        return dt.fromtimestamp(self.timestamp).strftime('%H-%M')
+    def write_spectrum_to_influx(self, frequency, spectrum, timestamp):
+        # Since Influx is for time-series measurements, store frequency axis as time.
+        # get timestamp array in ns (from frequency)
+        seconds_to_Hz = np.max(frequency) / (self.measurement_duration * 60.0)  # conversion factor
+        start_timestamp = timestamp.timestamp() * 1e9
+        timestamps = frequency * 1e9 / seconds_to_Hz + start_timestamp
+        timestamps = timestamps.astype(int)
 
-    @property
-    def ts_time(self):
-        return dt.fromtimestamp(self.timestamp).strftime('%H-%M-%S')
+        # Make string tags to simplify splitting apart measurements when querying data
+        time_str = timestamp.strftime('%H-%M')
+        date_str = timestamp.strftime('%Y-%m-%d')
 
-    @property
-    def ts_datetime(self):
-        return dt.fromtimestamp(self.timestamp).strftime('%Y-%m-%d:%H-%M-%S')
+        # Build DataFrame
+        df = pd.DataFrame({'time': timestamps, 'spectrum': spectrum, 'seconds_to_Hz':seconds_to_Hz,
+                           'date_string': date_str, 'time_string': time_str, 'location': self.location})
+        df.set_index('time', inplace=True)
+
+        # Upload DataFrame
+        self.write_api.write(bucket=self.spectrum_bucket, org=self.org, record=df,
+                             data_frame_measurement_name='spectrum_data',
+                             data_frame_tag_columns=['date_string', 'time_string', 'location', 'seconds_to_Hz'])
+
+    def write_peak_data_to_influx(self, integrated_peaks, timestamp):
+        timestamp = int(timestamp.timestamp() * 1e9)
+
+        integrated_peaks = {str(k): v for k, v in integrated_peaks.items()}
+        df = pd.DataFrame({'time': timestamp, 'location': self.location, **integrated_peaks}, index=[0])
+        df.set_index('time', inplace=True)
+
+        # Upload DataFrame
+        self.write_api.write(bucket=self.peaks_bucket, org=self.org, record=df,
+                             data_frame_measurement_name='integrated_peaks',
+                             data_frame_tag_columns=['location'])
 
     def merge_hdf_files(self):
         # Check if any files need to be merged
@@ -131,70 +318,20 @@ class VibrationPi:
             os.remove(os.path.join(self.temp_save_location, temp_file))
             logging.debug('File ' + temp_file + ' has been removed')
 
-    def measurements_sequence(self, t_wait_meas=0):
-        t_wait_meas_0 = 60 * t_wait_meas
-        while (True):
-            try:
-                #                # typical settings
-                #                self.wait_full_hour()
-
-                # measure often
-                self.wait_n_mins(10)
-
-                self.batteries.measure()
-                sleep(t_wait_meas_0)
-                self.timestamp = time()
-                self.data = self.hat.measurement()
-                self.batteries.charge()
-                self.save_data()
-            except:
-                self.reinit_counter += 1
-                if self.reinit_counter < 10:
-                    logging.debug('Failed during measurement sequence. Try to reinitialize after waiting for 60s.')
-                    sleep(60)
-                    self.__init__(channels=self.hat.channels,
-                                  samples_per_channel=self.hat.samples_per_channel,
-                                  scan_rate=self.hat.scan_rate)
-                    self.measurements_sequence(t_wait_meas)
-                else:
-                    logging.debug(
-                        'Failed during measurement sequence for more then 10 times. Try rebooting device in 10s.')
-                    sleep(10)
-                    os.system('reboot')
-
-    @property
-    def server_connection(self):
-        ret_val = os.system('ping -c 1 cerberous > /dev/null')
-        if ret_val == 0:
-            return True
-        else:
-            return False
-
-    def wait_full_hour(self):
-        t_now = int(dt.fromtimestamp(time()).strftime('%M'))
-        t_delta_full = abs(50 - t_now)
-        while (t_delta_full > 1):
-            t_now = int(dt.fromtimestamp(time()).strftime('%M'))
-            t_delta_full = abs(50 - t_now)
-            sleep(10)
-        return
-
-    def wait_n_mins(self, n=10):
-        """ Waits until the next n minutes mark (defaults to 10)"""
-        t_now = int(dt.fromtimestamp(time()).strftime('%M'))
-        while bool(t_now % n):  # repeat while t_now is not a multiple of n
-            t_now = int(dt.fromtimestamp(time()).strftime('%M'))
-            sleep(10)
-        return
-
 
 if __name__ == '__main__':
-    # Careful, must also toggle comments in measurements_sequence above!!!
+    # logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
+    #                     level=logging.DEBUG,
+    #                     format='%(asctime)s %(message)s')
 
-    #    # Typical settings (run once per hour, for 5 mins, wait 10 mins before measurement)
-    #    V = VibrationPi(samples_per_channel=300000, scan_rate=1000)
-    #    V.measurements_sequence(t_wait_meas=10)
+    with open('./config.json', 'r') as f:
+        config = json.load(f)
+    config['sampling_rate'] = 1000.
+    config['settling_time'] = 0.0
+    config['measurement_time'] = 0.5
+    config['measurement_period'] = 1.
+    config['token'] = "WE0PaAvJEuqHhBDy6HH0oVf69UmBfTsWvDO2Khy3r258r0t6nG5oIsqw8ut_YLGMhA8WHL2fibepl38PpfsLGA=="
+    config['org'] = 'ETH'
 
-    # Measure often (run once every 10 mins, for 3 mins, wait 4 mins before measurement)
-    V = VibrationPi(samples_per_channel=180000, scan_rate=1000)
-    V.measurements_sequence(t_wait_meas=4)
+    V = VibrationPi(config)
+    V.measure_continuously()
