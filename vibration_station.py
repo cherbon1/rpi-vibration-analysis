@@ -1,6 +1,5 @@
 import time
 from datetime import datetime, timedelta
-import subprocess
 import os
 import h5py
 import json
@@ -10,56 +9,10 @@ import daq_hat
 import numpy as np
 import pandas as pd
 from derive_psd import derive_psd, integrate_peaks
+from cerberous_connection import CerberousConnection
 
 import logging
 log = logging.getLogger(__name__)
-
-
-class CerberousConnection:
-    def __init__(self, network_drive_location):
-        self.network_drive_location = network_drive_location
-        self.connect_to_server()
-
-    @staticmethod
-    def connect_to_server():
-        retries = 10
-        while not os.system('ping -c 1 cerberous > /dev/null'):
-            log.warning('Connection to cerberous failed, will try again')
-            retries -= 1
-            if not retries:
-                raise RuntimeError('Failed to connect to cerberous')
-            time.sleep(5)
-
-    @staticmethod
-    def check_connection():
-        mounts = subprocess.check_output('mount').split(b'\n')
-        return any([b'vibration' in m for m in mounts])
-
-    def mount_network_drive(self):
-        if self.check_connection():
-            log.debug('Network storage is already available')
-            return
-        # Mount the drive
-        os.system('mount {}'.format(self.network_drive_location))
-
-        # Check that it was successfully mounted
-        retries = 10
-        while not self.check_connection():
-            log.warning('Network storage was not mounted, will try again')
-            time.sleep(2)
-            os.system('mount {}'.format(self.network_drive_location))
-            retries -= 1
-            if not retries:
-                raise RuntimeError('Failed to mount network drive')
-
-class DummyCerberousConnection(CerberousConnection):
-    @staticmethod
-    def connect_to_server():
-        return
-
-    @staticmethod
-    def check_connection():
-        return True
 
 class VibrationPi:
     '''
@@ -70,11 +23,31 @@ class VibrationPi:
     knows how to do an fft
     reads a json file with config at startup.
     '''
-    def __init__(self, config):
+    def __init__(self, config=None):
         '''
         :param config: dict or filepath containing json file. Contains settings for saving data, ...
         '''
 
+        # initialize batteries and hat
+        self.batteries = batteries.Batteries()
+        self.hat = daq_hat.Hat(channels=[0],
+                               samples_per_channel=self.sampling_rate * self.measurement_duration * 60.0,
+                               sampling_rate=self.sampling_rate)
+
+        if config is not None:
+            self.update_config(config)
+
+    def update_config(self, config):
+        '''
+        Reads a config file, and updates VibrationPi's settings accordingly
+        Parameters
+        ----------
+        config
+
+        Returns
+        -------
+
+        '''
         # Read config params
         if type(config) is dict:
             self.config = config
@@ -101,32 +74,32 @@ class VibrationPi:
         self.subdivision_factor = self.config.get('subdivision_factor', 32)  # 32 is fitting for 5 min measurements
 
         # InfluxDB related parameters
-        self.analysis_windows = self.config['analysis_windows']  # no default value here
-        self.token = self.config['token']
-        self.org = self.config.get('org', 'PhotonicsVibration')
-        self.time_trace_bucket = self.config.get('time_trace_bucket', 'TimeTraceData')
-        self.spectrum_bucket = self.config.get('spectrum_bucket', 'SpectrumData')
-        self.peaks_bucket = self.config.get('peaks_bucket', 'IntegratedPeaksData')
-        self.url = self.config.get('url', 'http://129.132.1.229:8086')
+        if self.write_to in ['InfluxDB', 'both']:
+            self.analysis_windows = self.config['analysis_windows']  # no default value here
+            self.token = self.config['token']
+            self.org = self.config.get('org', 'PhotonicsVibration')
+            self.time_trace_bucket = self.config.get('time_trace_bucket', 'TimeTraceData')
+            self.spectrum_bucket = self.config.get('spectrum_bucket', 'SpectrumData')
+            self.peaks_bucket = self.config.get('peaks_bucket', 'IntegratedPeaksData')
+            self.url = self.config.get('url', 'http://129.132.1.229:8086')
+
+        # Cerberous related parameters
+        if self.write_to in ['h5py', 'both']:
+            self.network_drive = self.config.get('network_drive', '/media/vibration')
+            self.save_location = self.config.get('save_location', '/media/vibration/d')
+            self.temp_save_location = self.config.get('temp_save_location', '/home/pi/Documents/temp_file_storage')
+
+        # Initialize timing
+        self.update_next_start_time()
+
+        # Check that the external connections are running
         if self.write_to in ['InfluxDB', 'both']:
             self.open_influx_client()  # defines self.client and self.write_api attributes
+            # (I don't think it's harmful to call this is client is already open)
 
-        # h5py related parameters
-        self.network_drive = self.config.get('network_drive', '/media/vibration')
-        self.save_location = self.config.get('save_location', '/media/vibration/d')
-        self.temp_save_location = self.config.get('temp_save_location', '/home/pi/Documents/temp_file_storage')
         if self.write_to in ['h5py', 'both']:
             self.cerberous = CerberousConnection(self.network_drive)
-
-        # initialize batteries and hat
-        self.batteries = batteries.Batteries()
-        self.hat = daq_hat.Hat(channels=[0],
-                               samples_per_channel=self.sampling_rate * self.measurement_duration * 60.0,
-                               sampling_rate=self.sampling_rate)
-
-        # Initialize timing related attributes
-        self.update_next_start_time()
-        self.timestamp = datetime.now()
+            # (I don't think it's harmful to call this is CerberousConnection is already open)
 
     def open_influx_client(self):
         self.client = InfluxDBClient(url=self.url, token=self.token)
@@ -145,21 +118,24 @@ class VibrationPi:
         self.next_start_time = (current_time + timedelta(hours=next_minute // 60)) \
             .replace(minute=int(next_minute % 60), second=0, microsecond=0)
 
-    def wait_for_start(self):
-        while datetime.now() + timedelta(minutes=self.settling_time) < self.next_start_time:
-            time.sleep(1)
+    def should_start(self):
+        '''Returns True if it's time for an automated measurement to be launched'''
+        return datetime.now() + timedelta(minutes=self.settling_time) >= self.next_start_time
 
     def measurement_sequence(self):
-        self.wait_for_start()
+        time.sleep(self.settling_time * 60.0)
+        timestamp = datetime.now()
+        data = self.hat.measurement()
+        return data, timestamp
+
+    def measurement_sequence_auto(self):
+        '''Measurement sequence with battery handling and some extra checks to counter for errors'''
         measurement_done = False
         retries = 10
         while not measurement_done:
             try:
                 self.batteries.measure()
-                time.sleep(self.settling_time * 60.0)
-                timestamp = datetime.now()
-                data = self.hat.measurement()
-
+                data, timestamp = self.measurement_sequence()
                 self.batteries.charge()
                 measurement_done = True
             except Exception as e:
@@ -171,12 +147,14 @@ class VibrationPi:
                 log.warning('{} during measurement, retrying'.format(e))
                 time.sleep(60)
                 self.__init__(self.config)
+
         self.save_data(data, timestamp)
 
-    def measure_continuously(self):
-        while True:
-            self.measurement_sequence()
-            self.update_next_start_time()
+    def measurement_sequence_manual(self):
+        '''Make sure batteries are connected before launching this'''
+        data, timestamp = self.measurement_sequence()
+        self.save_data(data, timestamp)
+
 
     def save_data(self, data, timestamp):
         if self.write_to in ['InfluxDB', 'both']:
@@ -317,12 +295,3 @@ class VibrationPi:
             os.remove(os.path.join(self.temp_save_location, temp_file))
             logging.debug('File ' + temp_file + ' has been removed')
 
-
-if __name__ == '__main__':
-    logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
-                        level=logging.DEBUG,
-                        format='%(asctime)s %(message)s')
-
-    config_file = './config_d.json'
-    V = VibrationPi(config_file)
-    V.measure_continuously()

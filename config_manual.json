@@ -1,0 +1,10 @@
+{
+	"location": "Custom",
+	"write_to": "h5py",
+	"settling_time": 1.0,
+	"measurement_time": 5.0,
+	"sampling_rate": 1000.0,
+	"network_drive": "/media/vibration",
+	"save_location": "/media/vibration/custom",
+	"temp_save_location": "/home/pi/Documents/temp_file_storage"
+}
