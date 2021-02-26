@@ -13,7 +13,9 @@ class CerberousConnection:
 
     def connect_to_server(self):
         retries = 10
-        while not (subprocess.call(['ping', '-c', '1', 'cerberous']) == 0):
+        return_val = os.system('ping -c 1 cerberous > /dev/null')  # returns 0 if success, 256 if fail
+        # (subprocess.call(['ping', '-c', '1', 'cerberous']) == 0)
+        while not return_val:
             log.warning('Connection to cerberous failed, will try again')
             retries -= 1
             if not retries:

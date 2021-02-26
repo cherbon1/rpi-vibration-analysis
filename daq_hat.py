@@ -66,7 +66,7 @@ class Hat:
         log.debug('Starting measurement scan in background.')
         self.mcc118.a_in_scan_start(self.channel_mask, self.samples_per_channel, self.sampling_rate, self.options)
         while True:
-            time.sleep(1)
+            time.sleep(0.2)
             self.status = self.mcc118.a_in_scan_status()
             if not self.status.running:
                 log.debug('Measurement finished. Reading data from buffer.')
