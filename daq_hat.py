@@ -85,5 +85,10 @@ class DummyHat(Hat):
         return 1.1+random(int(self.samples_per_channel))
 
 if __name__ == "__main__":
+    # Start logging:
+    logging.basicConfig(# filename='/home/pi/Documents/vibration_logger.log',
+                        level=logging.DEBUG,
+                        format='%(asctime)s %(message)s')
+
     hat = Hat()
     print(len(hat.measurement()))
