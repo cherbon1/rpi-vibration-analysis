@@ -23,19 +23,19 @@ class VibrationPi:
     knows how to do an fft
     reads a json file with config at startup.
     '''
-    def __init__(self, config=None):
+    def __init__(self, config):
         '''
         :param config: dict or filepath containing json file. Contains settings for saving data, ...
         '''
+
+        # read config file
+        self.update_config(config)
 
         # initialize batteries and hat
         self.batteries = batteries.Batteries()
         self.hat = daq_hat.Hat(channels=[0],
                                samples_per_channel=self.sampling_rate * self.measurement_duration * 60.0,
                                sampling_rate=self.sampling_rate)
-
-        if config is not None:
-            self.update_config(config)
 
     def update_config(self, config):
         '''
