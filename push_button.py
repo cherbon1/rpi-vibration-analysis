@@ -20,7 +20,7 @@ class PushButton:
     Any press shorter than long_threshold will be a short press
     Any press longer than long_threshold will be a long press
     '''
-    def __init__(self, long_threshold=2.):
+    def __init__(self, long_threshold=1.5):
         self._button_pushed = 0  # 1 for short press, 2 for long press
         self._last_value_time = 0
         self.memory = 5.
