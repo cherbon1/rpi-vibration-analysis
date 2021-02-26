@@ -160,20 +160,31 @@ class VibrationPi:
         if self.write_to in ['InfluxDB', 'both']:
             # open connection to server
             # (I don't think it hurts to repeat this, but weirdness can happen it it's  been open for too long)
+            log.debug('Opening connection to Influx')
             self.open_influx_client()
 
             # Write time-traces to time_trace_bucket
+            log.debug('Start writing traces...')
             self.write_time_trace_to_influx(data, timestamp)
+            log.debug('Done.')
 
             # calculate psd, and write psd to spectrum_bucket
+            log.debug('Computing PSDs...')
             frequency, spectrum = derive_psd(data, self.hat.sampling_rate, method='welch',
                                              subdivision_factor=self.subdivision_factor)
             clip = 2  # drop DC part of spectrum
+            log.debug('Done.')
+            log.debug('Start writing PSDs...')
             self.write_spectrum_to_influx(frequency[clip:], spectrum[clip:], timestamp)
+            log.debug('Done.')
 
             # integrate peaks and write to peaks_bucket
+            log.debug('Compute integrated peaks...')
             integrated_peaks = integrate_peaks(frequency, spectrum, self.analysis_windows)
+            log.debug('Done.')
+            log.debug('Write peaks...')
             self.write_peak_data_to_influx(integrated_peaks, timestamp)
+            log.debug('Done.')
 
         elif self.write_to in ['h5py', 'both']:
             try:
