@@ -79,7 +79,6 @@ while True:
         indicator_lights.ready()
 
         if push_button.button_pushed == 2:
-            # log.debug('Would shutdown now. skipped instead')
             next_state = VibrationStationStates.SHUTDOWN
             continue
 
@@ -109,11 +108,14 @@ while True:
 
         if push_button.button_pushed == 2:
             log.debug('Would shutdown now. skipped instead')
+            push_button._button_pushed = 0
             # next_state = VibrationStationStates.SHUTDOWN
             continue
 
         if push_button.button_pushed == 1:
-            next_state = VibrationStationStates.MANUAL_MODE_MEASURE
+            log.debug('Would measure now. skipped instead')
+            push_button._button_pushed = 0
+            # next_state = VibrationStationStates.MANUAL_MODE_MEASURE
             continue
 
         if GPIO.input(manual_switch_pin) == GPIO.LOW:
