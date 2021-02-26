@@ -31,6 +31,7 @@ class PushButton:
         # if the last event is too old, reset output to 0
         if self._last_value_time < time.time() - self.memory:
             self._button_pushed = 0
+        log.debug('button value is {}'.format(self._button_pushed))
         return self._button_pushed
 
     def button_readout(self, channel):

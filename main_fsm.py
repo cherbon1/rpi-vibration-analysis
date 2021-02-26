@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 from push_button import PushButton
 from indicator_lights import IndicatorLights
 from vibration_station import VibrationPi
+import time
 import os
 
 import logging
@@ -58,6 +59,7 @@ state_names = {0: 'AUTO_MODE_INITIALIZE',
 next_state = VibrationStationStates.AUTO_MODE_INITIALIZE
 
 while True:
+    time.sleep(0.505)
     # What state did we just transition to?
     if next_state is not None:
         current_state = next_state
