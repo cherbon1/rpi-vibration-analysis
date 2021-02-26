@@ -37,7 +37,7 @@ class PushButton:
 
     def button_readout(self, channel):
         log.debug('Enter button readout')
-        if time.time() - self._last_value_time > self._debounce:
+        if time.time() - self._last_value_time < self._debounce:
             log.debug('Debouncing on button up')
             return
 
