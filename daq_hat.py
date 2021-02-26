@@ -96,5 +96,8 @@ if __name__ == "__main__":
                         level=logging.DEBUG,
                         format='%(asctime)s %(message)s')
 
-    hat = Hat()
+    hat = Hat(samples_per_channel=1000*15, sampling_rate=1000)
+    print(len(hat.measurement()))
+
+    hat = Hat(samples_per_channel=1000*15., sampling_rate=1000)
     print(len(hat.measurement()))
