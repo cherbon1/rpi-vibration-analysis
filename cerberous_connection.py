@@ -13,12 +13,12 @@ class CerberousConnection:
 
     def connect_to_server(self):
         retries = 10
-        while not os.system('ping -c 1 cerberous > /dev/null'):
+        while not (subprocess.call('ping -c 1 cerberous') == 0):
             log.warning('Connection to cerberous failed, will try again')
             retries -= 1
             if not retries:
                 raise RuntimeError('Failed to connect to cerberous')
-            self.mount_network_drive()
+            # self.mount_network_drive()
             time.sleep(5)
 
     @staticmethod
