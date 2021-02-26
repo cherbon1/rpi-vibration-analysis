@@ -46,7 +46,13 @@ class Hat:
 
     def measurement(self):
         log.debug('Starting measurement scan in background.')
-        log.debug('MCC 118 HAT firmware: {}'.format(self.mcc118.firmware_version().version))
+        log.debug('MCC 118 HAT firmware_launch: {}'.format(self.mcc118.firmware_version().version))
+        log.debug('{} ({}), {} ({}), {} ({}), {} ({})'.format(
+            self.channel_mask, type(self.channel_mask),
+            self.samples_per_channel, type(self.samples_per_channel),
+            self.sampling_rate, type(self.sampling_rate),
+            self.options, type(self.options)
+        ))
         self.mcc118.a_in_scan_start(self.channel_mask, self.samples_per_channel, self.sampling_rate, self.options)
         log.debug('MCC 118 Scan launched')
         while True:
