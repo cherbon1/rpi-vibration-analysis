@@ -22,7 +22,6 @@ if not (GPIO.getmode() == GPIO.BCM):  # Use BCM numbering
 GPIO.setup(manual_switch_pin, GPIO.IN,
            pull_up_down=GPIO.PUD_DOWN)
 
-
 # Define FSM states
 class VibrationStationStates:
     AUTO_MODE_INITIALIZE = 0

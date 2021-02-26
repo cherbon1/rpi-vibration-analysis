@@ -10,7 +10,7 @@
 	"save_location": "/media/vibration/m",
 	"temp_save_location": "/home/pi/Documents/temp_file_storage",
 	"url" : "http://129.132.1.229:8086",
-	"token": "WE0PaAvJEuqHhBDy6HH0oVf69UmBfTsWvDO2Khy3r258r0t6nG5oIsqw8ut_YLGMhA8WHL2fibepl38PpfsLGA==",
+	"token": "5zIIN_tzgzuKH4V3QWfRZqam4XUY-R6ZS22IgnLNk-Ef8VIoOwWXggfmGWh_8GFR9sGgZaImEeUeoL2hs6RGRw==",
 	"org":"PhotonicsVibration",
 	"analysis_windows": {
 		"0.41" : [0.4, 0.75],
