@@ -1,8 +1,8 @@
 {
 	"location": "Custom",
 	"write_to": "h5py",
-	"settling_time": 1.0,
-	"measurement_time": 5.0,
+	"settling_time": 0.0,
+	"measurement_time": 0.5,
 	"sampling_rate": 1000.0,
 	"network_drive": "/media/vibration",
 	"save_location": "/media/vibration/custom",
