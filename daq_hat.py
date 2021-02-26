@@ -46,21 +46,13 @@ class Hat:
 
     def measurement(self):
         log.debug('Starting measurement scan in background.')
-        log.debug('MCC 118 HAT firmware_launch: {}'.format(self.mcc118.firmware_version().version))
-        log.debug('{} ({}), {} ({}), {} ({}), {} ({})'.format(
-            self.channel_mask, type(self.channel_mask),
-            self.samples_per_channel, type(self.samples_per_channel),
-            self.sampling_rate, type(self.sampling_rate),
-            self.options, type(self.options)
-        ))
-        self.mcc118.a_in_scan_start(self.channel_mask, self.samples_per_channel, self.sampling_rate, self.options)
-        log.debug('MCC 118 Scan launched')
+        self.mcc118.a_in_scan_start(self.channel_mask, int(self.samples_per_channel),
+                                    int(self.sampling_rate), self.options)
         while True:
             time.sleep(0.2)
             self.status = self.mcc118.a_in_scan_status()
             if not self.status.running:
                 log.debug('Measurement finished. Reading data from buffer.')
-                log.debug('MCC 118 HAT firmware: {}'.format(self.mcc118.firmware_version().version))
                 break
             elif self.status.hardware_overrun:
                 log.warning('Hardware overrun during measurement.')
@@ -97,7 +89,4 @@ if __name__ == "__main__":
                         format='%(asctime)s %(message)s')
 
     hat = Hat(samples_per_channel=1000*15, sampling_rate=1000)
-    print(len(hat.measurement()))
-
-    hat = Hat(samples_per_channel=1000*15., sampling_rate=1000)
     print(len(hat.measurement()))
