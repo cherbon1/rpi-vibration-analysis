@@ -28,7 +28,6 @@ class PushButton:
     def button_pushed(self):
         ret_val = self._button_pushed
         self._button_pushed = 0
-        log.debug('reading out button val {}'.format(ret_val))
         return ret_val
 
     def button_readout(self, channel):
