@@ -155,7 +155,6 @@ class VibrationPi:
         data, timestamp = self.measurement_sequence()
         self.save_data(data, timestamp)
 
-
     def save_data(self, data, timestamp):
         if self.write_to in ['InfluxDB', 'both']:
             # open connection to server
@@ -163,10 +162,10 @@ class VibrationPi:
             log.debug('Opening connection to Influx')
             self.open_influx_client()
 
-            # Write time-traces to time_trace_bucket
-            log.debug('Start writing traces...')
-            self.write_time_trace_to_influx(data, timestamp)
-            log.debug('Done.')
+            # # Write time-traces to time_trace_bucket
+            # log.debug('Start writing traces...')
+            # self.write_time_trace_to_influx(data, timestamp)
+            # log.debug('Done.')
 
             # calculate psd, and write psd to spectrum_bucket
             log.debug('Computing PSDs...')

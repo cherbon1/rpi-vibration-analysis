@@ -1,9 +1,9 @@
 {
 	"location": "M21",
-	"write_to": "both",
+	"write_to": "h5py",
 	"settling_time": 0.5,
-	"measurement_time": 3.0,
-	"measurement_period": 5.0,
+	"measurement_time": 1.0,
+	"measurement_period": 2.0,
 	"sampling_rate": 1000.0,
 	"subdivision_factor": 64,
 	"network_drive": "/media/vibration",

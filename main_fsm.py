@@ -16,16 +16,16 @@ config_file_manual = './config_manual.json'
 if not (GPIO.getmode() == GPIO.BCM):  # Use BCM numbering
     GPIO.setmode(GPIO.BCM)
 
-indicator_lights = IndicatorLights(2, 3)
+indicator_lights = IndicatorLights(5, 6)
 
 push_button = PushButton()
-push_button_pin = 5
-GPIO.setup(push_button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+push_button_pin = 2
+GPIO.setup(push_button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.add_event_detect(push_button_pin, GPIO.FALLING, callback=push_button.button_readout, bouncetime=500)
 
-manual_switch_pin = 6
+manual_switch_pin = 3
 # GPIO.setwarnings(False)  # Ignore warning for now
-GPIO.setup(manual_switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(manual_switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Start logging:
 logging.basicConfig(# filename='/home/pi/Documents/vibration_logger.log',
