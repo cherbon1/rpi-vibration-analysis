@@ -16,14 +16,14 @@ config_file_manual = './config_manual.json'
 if not (GPIO.getmode() == GPIO.BCM):  # Use BCM numbering
     GPIO.setmode(GPIO.BCM)
 
-indicator_lights = IndicatorLights(17, 27)
+indicator_lights = IndicatorLights(2, 3)
 
 push_button = PushButton()
-push_button_pin = 22
+push_button_pin = 5
 GPIO.setup(push_button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.add_event_detect(push_button_pin, GPIO.FALLING, callback=push_button.button_readout, bouncetime=500)
 
-manual_switch_pin = 10
+manual_switch_pin = 6
 # GPIO.setwarnings(False)  # Ignore warning for now
 GPIO.setup(manual_switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
