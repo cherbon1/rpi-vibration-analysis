@@ -28,7 +28,7 @@ manual_switch_pin = 10
 GPIO.setup(manual_switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # Start logging:
-logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
+logging.basicConfig(# filename='/home/pi/Documents/vibration_logger.log',
                     level=logging.DEBUG,
                     format='%(asctime)s %(message)s')
 
