@@ -83,3 +83,7 @@ class DummyHat(Hat):
         from numpy.random import random
         time.sleep(self.samples_per_channel/self.sampling_rate)
         return 1.1+random(int(self.samples_per_channel))
+
+if __name__ == "__main__":
+    hat = Hat()
+    print(len(hat.measurement()))
