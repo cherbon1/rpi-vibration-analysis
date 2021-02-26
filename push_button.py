@@ -25,6 +25,8 @@ class PushButton:
         self._last_value_time = 0
         self.memory = 5.
         self.long_threshold = long_threshold
+        self._button_up = True
+        self._timeout = 10.  # button timeout
 
     @property
     def button_pushed(self):
@@ -36,10 +38,13 @@ class PushButton:
 
     def button_readout(self, channel):
         log.debug('Enter button readout')
+        self._button_up = False
         start_time = time.time()
 
-        while GPIO.input(channel) == 0: # Wait for the button up
-            pass
+        while not self._button_up: # Wait for the button up
+            if time.time() - start_time > self._timeout:
+                log.debug('Button timeout!')
+                return
 
         buttonTime = time.time() - start_time    # How long was the button down?
         log.debug('Button up. press length: {:.1f}'.format(buttonTime))
@@ -53,3 +58,6 @@ class PushButton:
 
         self._last_value_time = time.time()  # remember when the last event happend
         log.debug('Exit button push')
+
+    def button_up(self):
+        self._button_up = True

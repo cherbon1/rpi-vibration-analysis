@@ -23,6 +23,7 @@ push_button = PushButton()
 push_button_pin = 2
 GPIO.setup(push_button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.add_event_detect(push_button_pin, GPIO.FALLING, callback=push_button.button_readout, bouncetime=500)
+GPIO.add_event_detect(push_button_pin, GPIO.RISING, callback=push_button.button_up, bouncetime=500)
 
 manual_switch_pin = 3
 # GPIO.setwarnings(False)  # Ignore warning for now
