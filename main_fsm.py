@@ -19,7 +19,9 @@ if not (GPIO.getmode() == GPIO.BCM):  # Use BCM numbering
 indicator_lights = IndicatorLights(17, 27)
 
 push_button = PushButton()
-GPIO.add_event_detect(22, GPIO.FALLING, callback=push_button.button_readout, bouncetime=500)
+push_button_pin = 22
+GPIO.setup(push_button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.add_event_detect(push_button_pin, GPIO.FALLING, callback=push_button.button_readout, bouncetime=500)
 
 manual_switch_pin = 10
 # GPIO.setwarnings(False)  # Ignore warning for now
