@@ -5,6 +5,9 @@ except ImportError:
     pass
 import time
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class PushButton:
     '''
@@ -28,15 +31,20 @@ class PushButton:
         return ret_val
 
     def button_readout(self, channel):
+        log.debug('Enter button readout')
         start_time = time.time()
 
         while GPIO.input(channel) == 0: # Wait for the button up
             pass
+        log.debug('Button up')
 
         buttonTime = time.time() - start_time    # How long was the button down?
 
         if buttonTime < self.long_threshold:
             self.buttonStatus = 1  # 1 Short press
+            log.debug('was short')
         else:
             self.buttonStatus = 2  # 2 Long press
+            log.debug('was long')
 
+        log.debug('Exit button push')
