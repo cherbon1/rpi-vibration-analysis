@@ -79,8 +79,8 @@ while True:
         indicator_lights.ready()
 
         if push_button.button_pushed == 2:
-            log.debug('Would shutdown now. skipped instead')
-            # next_state = VibrationStationStates.SHUTDOWN
+            # log.debug('Would shutdown now. skipped instead')
+            next_state = VibrationStationStates.SHUTDOWN
             continue
 
         if GPIO.input(manual_switch_pin) == GPIO.HIGH:
