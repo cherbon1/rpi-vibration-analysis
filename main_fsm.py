@@ -16,7 +16,7 @@ config_file_manual = './config_manual.json'
 if not (GPIO.getmode() == GPIO.BCM):  # Use BCM numbering
     GPIO.setmode(GPIO.BCM)
 
-indicator_lights = IndicatorLights(5, 6)
+indicator_lights = IndicatorLights(red=5, green=6)
 
 push_button = PushButton()
 push_button_pin = 2
@@ -76,8 +76,7 @@ while True:
     elif current_state == VibrationStationStates.AUTO_MODE_WAIT:
         indicator_lights.ready()
 
-        push_button_val = push_button.button_pushed
-        if push_button_val == 2:
+        if push_button.button_pushed == 2:
             log.debug('Would shutdown now. skipped instead')
             # next_state = VibrationStationStates.SHUTDOWN
             continue
@@ -106,14 +105,12 @@ while True:
     elif current_state == VibrationStationStates.MANUAL_MODE_WAIT:
         indicator_lights.ready()
 
-        # a bit convoluted, but required to b.c. button_pushed is reset on read
-        push_button_val = push_button.button_pushed
-        if push_button_val == 2:
+        if push_button.button_pushed == 2:
             log.debug('Would shutdown now. skipped instead')
             # next_state = VibrationStationStates.SHUTDOWN
             continue
 
-        if push_button_val == 1:
+        if push_button.button_pushed == 1:
             next_state = VibrationStationStates.MANUAL_MODE_MEASURE
             continue
 

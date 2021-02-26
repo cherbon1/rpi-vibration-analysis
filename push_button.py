@@ -22,13 +22,16 @@ class PushButton:
     '''
     def __init__(self, long_threshold=2.):
         self._button_pushed = 0  # 1 for short press, 2 for long press
+        self._last_value_time = 0
+        self.memory = 5.
         self.long_threshold = long_threshold
 
     @property
     def button_pushed(self):
-        ret_val = self._button_pushed
-        self._button_pushed = 0
-        return ret_val
+        # if the last event is too old, reset output to 0
+        if self._last_value_time < time.time() - self.memory:
+            self._button_pushed = 0
+        return self._button_pushed
 
     def button_readout(self, channel):
         log.debug('Enter button readout')
@@ -47,4 +50,5 @@ class PushButton:
             self._button_pushed = 2  # 2 Long press
             log.debug('was long')
 
+        self._last_value_time = time.time()  # remember when the last event happend
         log.debug('Exit button push')
