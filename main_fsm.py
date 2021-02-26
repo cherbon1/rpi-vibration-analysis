@@ -76,7 +76,8 @@ while True:
     elif current_state == VibrationStationStates.AUTO_MODE_WAIT:
         indicator_lights.ready()
 
-        if push_button.button_pushed == 2:
+        push_button_val = push_button.button_pushed
+        if push_button_val == 2:
             log.debug('Would shutdown now. skipped instead')
             # next_state = VibrationStationStates.SHUTDOWN
             continue
@@ -105,12 +106,14 @@ while True:
     elif current_state == VibrationStationStates.MANUAL_MODE_WAIT:
         indicator_lights.ready()
 
-        if push_button.button_pushed == 2:
+        # a bit convoluted, but required to b.c. button_pushed is reset on read
+        push_button_val = push_button.button_pushed
+        if push_button_val == 2:
             log.debug('Would shutdown now. skipped instead')
             # next_state = VibrationStationStates.SHUTDOWN
             continue
 
-        if push_button.button_pushed == 1:
+        if push_button_val == 1:
             next_state = VibrationStationStates.MANUAL_MODE_MEASURE
             continue
 
