@@ -5,6 +5,10 @@ from indicator_lights import IndicatorLights
 from vibration_station import VibrationPi
 import os
 
+import logging
+log = logging.getLogger(__name__)
+
+# Define config files
 config_file_auto = './config_d.json'
 config_file_manual = './config_manual.json'
 
@@ -22,6 +26,12 @@ if not (GPIO.getmode() == GPIO.BCM):  # Use BCM numbering
 GPIO.setup(manual_switch_pin, GPIO.IN,
            pull_up_down=GPIO.PUD_DOWN)
 
+# Start logging:
+logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
+                    level=logging.DEBUG,
+                    format='%(asctime)s %(message)s')
+
+
 # Define FSM states
 class VibrationStationStates:
     AUTO_MODE_INITIALIZE = 0
@@ -33,6 +43,14 @@ class VibrationStationStates:
     MANUAL_MODE_MEASURE = 5
 
     SHUTDOWN = 9
+state_names = {0: 'AUTO_MODE_INITIALIZE',
+               1: 'AUTO_MODE_WAIT',
+               2: 'AUTO_MODE_MEASURE',
+               3: 'MANUAL_MODE_INITIALIZE',
+               4: 'MANUAL_MODE_WAIT',
+               5: 'MANUAL_MODE_MEASURE',
+               9: 'SHUTDOWN',
+               }
 
 
 # FSM initialization and running
@@ -40,7 +58,11 @@ next_state = VibrationStationStates.AUTO_MODE_INITIALIZE
 
 while True:
     # What state did we just transition to?
-    current_state = next_state
+    if next_state is not None:
+        current_state = next_state
+        log.info('Entering state {}'.format(state_names[next_state]))
+
+    next_state = None
 
     # What needs to be done in current state
     if current_state == VibrationStationStates.AUTO_MODE_INITIALIZE:
