@@ -31,7 +31,7 @@ class PushButton:
         # if the last event is too old, reset output to 0
         if self._last_value_time < time.time() - self.memory:
             self._button_pushed = 0
-        log.debug('button value is {}'.format(self._button_pushed))
+        # log.debug('button value is {}'.format(self._button_pushed))
         return self._button_pushed
 
     def button_readout(self, channel):
@@ -40,9 +40,9 @@ class PushButton:
 
         while GPIO.input(channel) == 0: # Wait for the button up
             pass
-        log.debug('Button up')
 
         buttonTime = time.time() - start_time    # How long was the button down?
+        log.debug('Button up. press length: {:.1f}'.format(buttonTime))
 
         if buttonTime < self.long_threshold:
             self._button_pushed = 1  # 1 Short press
