@@ -1,5 +1,5 @@
 import time
-from daqhats import mcc118, OptionFlags, HatIDs, HatError, hat_list
+from daqhats import mcc118
 
 import logging
 log = logging.getLogger(__name__)
@@ -16,10 +16,10 @@ class Hat:
         self.num_channels = len(self.channels)
         self.samples_per_channel = samples_per_channel
         self.sampling_rate = sampling_rate
-        self.options = OptionFlags.DEFAULT
+        self.options = 0  # 0 is default
         self.status = None
 
-        self.address = self.select_hat_device(HatIDs.MCC_118)
+        self.address = 0  # address of daqhat
         self.mcc118 = mcc118(self.address)
 
         log.debug('Selected MCC 118 HAT device at address: {}'.format(self.address))
@@ -43,25 +43,6 @@ class Hat:
             if item & bit_mask:
                 item_names.append(item.name)
         return ', '.join(item_names)
-
-    def select_hat_device(self, filter_by_id):
-
-        selected_hat_address = None
-
-        # Get descriptors for all of the available HAT devices.
-        hats = hat_list(filter_by_id=filter_by_id)
-        number_of_hats = len(hats)
-
-        # Verify at least one HAT device is detected.
-        if number_of_hats < 1:
-            raise HatError(0, 'Error: No HAT devices found')
-        else:
-            selected_hat_address = hats[0].address
-
-        if selected_hat_address is None:
-            raise ValueError('Error: Invalid HAT selection')
-
-        return selected_hat_address
 
     def measurement(self):
         log.debug('Starting measurement scan in background.')
