@@ -26,5 +26,7 @@ if __name__ == "__main__":
     try:
         vibration_fsm.run()
     except Exception as e:
-        vibration_fsm.indicator_lights.both()
+        vibration_fsm.indicator_lights.both()  # exits with error: both lights on
         raise e
+
+    vibration_fsm.indicator_lights.off()  # exits noramlly: both lights off
