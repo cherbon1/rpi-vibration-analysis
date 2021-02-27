@@ -13,8 +13,8 @@ if __name__ == "__main__":
     config_file_auto = 'config_d.json'
     config_file_manual = 'config_manual.json'
 
-    config_file_auto_full_path = os.path.join(__file__, config_file_auto)
-    config_file_manual_full_path = os.path.join(__file__, config_file_manual)
+    config_file_auto_full_path = os.path.join(os.path.dirname(__file__), config_file_auto)
+    config_file_manual_full_path = os.path.join(os.path.dirname(__file__), config_file_manual)
 
     vibration_fsm = VibrationFSM(config_file_auto_full_path, config_file_manual_full_path)
 
