@@ -28,4 +28,4 @@ class IndicatorLights:
         self._set_leds(1, 0)
 
     def both(self):
-        self._set_leds(0, 0)
+        self._set_leds(1, 1)

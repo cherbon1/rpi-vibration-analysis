@@ -27,7 +27,6 @@ if __name__ == "__main__":
     try:
         vibration_fsm.run()
     except Exception as e:
-        print('ERROR, turning lights on')
         vibration_fsm.indicator_lights.both()
         import time
         time.sleep(5)
