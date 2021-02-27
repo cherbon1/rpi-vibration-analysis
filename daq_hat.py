@@ -4,6 +4,8 @@ from daqhats import mcc118
 import logging
 log = logging.getLogger(__name__)
 
+# According to spec (https://mccdaq.github.io/daqhats/_static/esmcc118.pdf):
+# GPIO pins 8, 9, 19, 11, 12, 13, 26 are used by the daqhat.
 
 class Hat:
     timeout = 5.0

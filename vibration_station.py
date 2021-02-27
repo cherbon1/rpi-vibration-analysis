@@ -85,6 +85,7 @@ class VibrationPi:
 
         # Cerberous related parameters
         if self.write_to in ['h5py', 'both']:
+            self.filename = self.config.get('filename', 'default')
             self.network_drive = self.config.get('network_drive', '/media/vibration')
             self.save_location = self.config.get('save_location', '/media/vibration/d')
             self.temp_save_location = self.config.get('temp_save_location', '/home/pi/Documents/temp_file_storage')
@@ -193,7 +194,7 @@ class VibrationPi:
                 log.warning('Connection to network drive failed, data will be saved locally')
                 save_to = self.temp_save_location
 
-            filename = timestamp.strftime('%Y-%m') + '.h5'
+            filename = timestamp.strftime('%Y-%m') + '.h5' if self.filename == 'default' else self.filename
             save_to = os.path.join(save_to, filename)
 
             with h5py.File(save_to, 'a') as f:
