@@ -1,14 +1,13 @@
 import os
 from fsm import VibrationFSM
+import RPi.GPIO as GPIO
 
 import logging
 log = logging.getLogger(__name__)
 
-# TODO: Add options for naming datasets etc...
-# TODO: Clean up main. Make the FSM its own class
-# TODO: make sure shutdown actually shuts down
-
 if __name__ == "__main__":
+    # Ignore GPIO warnings
+    GPIO.setwarnings(False)
 
     # Start logging:
     logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
@@ -28,6 +27,4 @@ if __name__ == "__main__":
         vibration_fsm.run()
     except Exception as e:
         vibration_fsm.indicator_lights.both()
-        import time
-        time.sleep(5)
         raise e

@@ -51,7 +51,6 @@ class VibrationFSM:
                               callback=self.push_button.button_readout, bouncetime=500)
         
         self.manual_switch_pin = 3
-        # GPIO.setwarnings(False)  # Ignore warning for now
         GPIO.setup(self.manual_switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         # FSM initialization and running
