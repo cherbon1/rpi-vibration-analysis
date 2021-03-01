@@ -21,19 +21,19 @@ class PushButton:
     Any press longer than long_threshold will be a long press
     '''
     def __init__(self, long_threshold=1.5):
+        self.long_threshold = long_threshold
+
         self._button_pushed = 0  # 1 for short press, 2 for long press
         self._last_value_time = 0
-        self.memory = 5.
-        self.long_threshold = long_threshold
-        self._debounce_down = 0.005  # avoids false reads
+        self._memory = 2.  # A button press will be memorized for this long before being ignored
+        self._debounce_down = 0.005  # avoids false reads. "debounce" is the wrong term here, but whatevs
         self._debounce_up = 0.5  # button_up debounce
 
     @property
     def button_pushed(self):
         # if the last event is too old, reset output to 0
-        if self._last_value_time < time.time() - self.memory:
+        if self._last_value_time < time.time() - self._memory:
             self._button_pushed = 0
-        # log.debug('button value is {}'.format(self._button_pushed))
         return self._button_pushed
 
     def button_readout(self, channel):
