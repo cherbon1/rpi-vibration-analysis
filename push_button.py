@@ -25,7 +25,7 @@ class PushButton:
         self._last_value_time = 0
         self.memory = 5.
         self.long_threshold = long_threshold
-        self._debounce_down = 0.01  # avoids false reads
+        self._debounce_down = 0.005  # avoids false reads
         self._debounce_up = 0.5  # button_up debounce
 
     @property
