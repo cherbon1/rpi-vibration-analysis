@@ -47,7 +47,7 @@ class PushButton:
             pass
 
         buttonTime = time.time() - start_time    # How long was the button down?
-        log.debug('Button up. press length: {:.1f}'.format(buttonTime))
+        log.debug('Button up. press length: {:.4f}'.format(buttonTime))
 
         if buttonTime < self.long_threshold:
             self._button_pushed = 1  # 1 Short press

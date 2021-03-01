@@ -56,8 +56,8 @@ class VibrationPi:
                 self.config = json.load(f)
 
         # General config
-        self.location = self.config.get('location', 'D')  # 'D' or 'M'
-        self.write_to = self.config.get('write_to', 'both')  # whether to write to InfluxDB or h5py or both
+        self.location = self.config.get('location', 'HPP')  # 'D' or 'M'
+        self.write_to = self.config.get('write_to', 'h5py')  # whether to write to InfluxDB or h5py or both
 
         # measurement related config
         self.sampling_rate = self.config.get('sampling_rate', 1000.0)  # DAQ sampling rate
