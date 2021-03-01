@@ -25,7 +25,8 @@ class PushButton:
         self._last_value_time = 0
         self.memory = 5.
         self.long_threshold = long_threshold
-        self._debounce = 0.5  # button_up debounce
+        self._debounce_down = 0.01  # avoids false reads
+        self._debounce_up = 0.5  # button_up debounce
 
     @property
     def button_pushed(self):
@@ -37,7 +38,7 @@ class PushButton:
 
     def button_readout(self, channel):
         log.debug('Enter button readout')
-        if time.time() - self._last_value_time < self._debounce:
+        if time.time() - self._last_value_time < self._debounce_up:
             log.debug('Debouncing on button up')
             return
 
@@ -49,7 +50,9 @@ class PushButton:
         buttonTime = time.time() - start_time    # How long was the button down?
         log.debug('Button up. press length: {:.4f}'.format(buttonTime))
 
-        if buttonTime < self.long_threshold:
+        if buttonTime < self._debounce_down:
+            log.debug('Press length too short ({:.4f}), ignored'.format(buttonTime))
+        elif buttonTime < self.long_threshold:
             self._button_pushed = 1  # 1 Short press
             log.debug('was short')
         else:
