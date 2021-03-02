@@ -31,12 +31,6 @@ class VibrationPi:
         # read config file
         self.update_config(config)
 
-        # initialize batteries and hat
-        self.batteries = batteries.Batteries()
-        self.hat = daq_hat.Hat(channels=[0],
-                               samples_per_channel=self.sampling_rate * self.measurement_duration * 60.0,
-                               sampling_rate=self.sampling_rate)
-
     def update_config(self, config):
         '''
         Reads a config file, and updates VibrationPi's settings accordingly
@@ -101,6 +95,12 @@ class VibrationPi:
         if self.write_to in ['h5py', 'both']:
             self.cerberous = CerberousConnection(self.network_drive)
             # (I don't think it's harmful to call this is CerberousConnection is already open)
+
+        # initialize batteries and hat (needs to be done after reading config file, b.c. hat needs meas. duration info)
+        self.batteries = batteries.Batteries()
+        self.hat = daq_hat.Hat(channels=[0],
+                               samples_per_channel=self.sampling_rate * self.measurement_duration * 60.0,
+                               sampling_rate=self.sampling_rate)
 
     def open_influx_client(self):
         self.client = InfluxDBClient(url=self.url, token=self.token)
