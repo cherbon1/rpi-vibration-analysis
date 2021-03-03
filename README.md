@@ -5,7 +5,7 @@ RaspberryPi powered automatic vibration monitoring station.
 To-do / potential improvements:
 - Troubleshoot/fix/test writing to influxDB.
 - Better handling of lack of connection to network (e.g. blink LEDs to signal it, then record locally in manual mode)
-- Read config files off of Cerberous (Requires everyone to have write access to Cerberous)
+- Read config files off of Cerberous --> more straightforward way to change settings (Requires everyone to have write access to Cerberous)
 
 ## Vibration monitoring station: Instructions
 
