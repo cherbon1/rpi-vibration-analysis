@@ -148,6 +148,7 @@ class VibrationFSM:
                 self.indicator_lights.both()  # potentially replace this with blinking LEDs
                 self.switch_state_on_charge_init = GPIO.input(self.manual_switch_pin)
                 self.vibration_pi.batteries.charge()
+                self.push_button._button_pushed = 0  # This is an ugly hack. The PushButton class should be cleaned up
                 self.next_state = self.CHARGE
                 continue
 
