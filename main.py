@@ -1,6 +1,7 @@
 import os
 from fsm import VibrationFSM
 import RPi.GPIO as GPIO
+from cerberous_connection import CerberousConnection
 
 import logging
 log = logging.getLogger(__name__)
@@ -8,6 +9,10 @@ log = logging.getLogger(__name__)
 if __name__ == "__main__":
     # Ignore GPIO warnings
     GPIO.setwarnings(False)
+
+    # Check connection to cerberous
+    cerberous_conn = CerberousConnection('/media/vibration')
+    cerberous_conn.mount_network_drive()
 
     # Start logging:
     logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
