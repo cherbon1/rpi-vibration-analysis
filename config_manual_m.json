@@ -1,5 +1,5 @@
 {
-	"filename": "my_measurement.h5",
+	"filename": "manual_measurements_M.h5",
 	"settling_time": 0.05,
 	"measurement_time": 5.0,
 	"sampling_rate": 1000.0,

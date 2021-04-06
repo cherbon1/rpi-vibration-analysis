@@ -23,6 +23,8 @@ class VibrationFSM:
     MANUAL_MODE_WAIT = 4
     MANUAL_MODE_MEASURE = 5
 
+    CHARGE_INITIALIZE = 7
+    CHARGE = 8
     SHUTDOWN = 9
     state_names = {0: 'AUTO_MODE_INITIALIZE',
                1: 'AUTO_MODE_WAIT',
@@ -30,6 +32,8 @@ class VibrationFSM:
                3: 'MANUAL_MODE_INITIALIZE',
                4: 'MANUAL_MODE_WAIT',
                5: 'MANUAL_MODE_MEASURE',
+               7: 'CHARGE_INITIALIZE',
+               8: 'CHARGE',
                9: 'SHUTDOWN',
                }
     
@@ -64,6 +68,10 @@ class VibrationFSM:
 
         self.vibration_pi = None
 
+        # Store the position of the auto/man switch when charging.
+        # This is required to know when we're switching away from it
+        self.switch_state_on_charge_init = None
+
     def run(self):
         
         while True:
@@ -87,7 +95,7 @@ class VibrationFSM:
                 self.indicator_lights.ready()
         
                 if self.push_button.button_pushed == 2:
-                    self.next_state = self.SHUTDOWN
+                    self.next_state = self.CHARGE_INITIALIZE
                     continue
         
                 if GPIO.input(self.manual_switch_pin) == GPIO.HIGH:
@@ -117,7 +125,7 @@ class VibrationFSM:
                 if self.push_button.button_pushed == 2:
                     # log.debug('Would shutdown now. skipped instead')
                     # push_button._button_pushed = 0
-                    self.next_state = self.SHUTDOWN
+                    self.next_state = self.CHARGE_INITIALIZE
                     continue
         
                 if self.push_button.button_pushed == 1:
@@ -136,6 +144,32 @@ class VibrationFSM:
                 self.next_state = self.MANUAL_MODE_WAIT
                 continue
         
+            elif self.current_state == self.CHARGE_INITIALIZE:
+                self.indicator_lights.both()  # potentially replace this with blinking LEDs
+                self.switch_state_on_charge_init = GPIO.input(self.manual_switch_pin)
+                self.vibration_pi.batteries.charge()
+                self.next_state = self.CHARGE
+                continue
+
+            elif self.current_state == self.CHARGE:
+                # If long press, shutdown
+                if self.push_button.button_pushed == 2:
+                    self.next_state = self.SHUTDOWN
+                    continue
+
+                # If switch hasn't moved, continue
+                if GPIO.input(self.manual_switch_pin) == self.switch_state_on_charge_init:
+                    continue
+
+                # If this code is reached, the switch was moved and the FSM should be sent to the relevant state
+                if GPIO.input(self.manual_switch_pin) == GPIO.HIGH:
+                    self.next_state = self.MANUAL_MODE_INITIALIZE
+                    continue
+
+                if GPIO.input(self.manual_switch_pin) == GPIO.LOW:
+                    self.next_state = self.AUTO_MODE_INITIALIZE
+                    continue
+
             elif self.current_state == self.SHUTDOWN:
                 self.indicator_lights.both()
                 os.system('sudo shutdown now')

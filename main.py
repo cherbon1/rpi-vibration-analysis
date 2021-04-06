@@ -14,14 +14,27 @@ if __name__ == "__main__":
         level=logging.INFO,
         format='%(asctime)s %(message)s')
 
-    # Define config files
-    config_file_auto = 'config_d.json'
-    config_file_manual = 'config_manual.json'
+    # Define config file names
+    config_file_auto_name = 'config_auto_d.json'
+    config_file_manual_name = 'config_manual_d.json'
 
-    config_file_auto_full_path = os.path.join(os.path.dirname(__file__), config_file_auto)
-    config_file_manual_full_path = os.path.join(os.path.dirname(__file__), config_file_manual)
+    # Define remote location and filenames
+    config_file_directory_remote = '/media/vibration/config/'
+    config_file_auto_remote = os.path.join(config_file_directory_remote, config_file_auto_name)
+    config_file_manual_remote = os.path.join(config_file_directory_remote, config_file_manual_name)
 
-    vibration_fsm = VibrationFSM(config_file_auto_full_path, config_file_manual_full_path)
+    if os.path.exists(config_file_auto_remote) and \
+       os.path.exists(config_file_manual_remote):
+        config_file_auto = config_file_auto_remote
+        config_file_manual = config_file_manual_remote
+    else:
+        config_file_auto = os.path.join(os.path.dirname(__file__), config_file_auto_name)
+        config_file_manual = os.path.join(os.path.dirname(__file__), config_file_manual_name)
+
+    log.info('Using the following config files:')
+    log.info('  Auto: {}'.format(config_file_auto))
+    log.info('  Manual: {}'.format(config_file_manual))
+    vibration_fsm = VibrationFSM(config_file_auto, config_file_manual)
 
     try:
         vibration_fsm.run()

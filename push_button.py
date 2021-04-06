@@ -44,7 +44,7 @@ class PushButton:
 
         start_time = time.time()
 
-        while GPIO.input(channel) == 0: # Wait for the button up
+        while GPIO.input(channel) == 0:  # Wait for the button up
             pass
 
         buttonTime = time.time() - start_time    # How long was the button down?
