@@ -9,6 +9,15 @@ To-do / potential improvements:
 
 ## Vibration monitoring station: Instructions
 
+### Configuration of measurements
+1. Connect to Cerberous
+2. In the folder /BuildingVibrations/config, you'll find 4 .json files with configuration parameters. These files
+contain the settings for the manual and auto modes of both stations. Edit whichever config file you want to match your
+desired settings
+
+Note: it is important that the station be connected to the network when starting up. If that's not the case, the station
+will be unable to read the config file on Cerberous, and will default to locally stored parameters instead.
+
 ### Automated measurements of building vibrations at regular intervals
 1.	Connect the station to power and to the network
 2.	Verify that the accelerometer settings are correct: On, 450Hz, 1000V/g
@@ -28,7 +37,7 @@ To-do / potential improvements:
 3.	Choose your accelerometer settings on the front panel
 4.	Use the BNC output at the back of the station to connect your DAQ
 
-###Changing the measurement settings
+###Changing the measurement settings (now obsolete. See Configuration of Measurements above instead)
 1.	Connect the station to power and to the network
 2.	Connect to the raspberry pi remotely (via SSH or VNC)
 3.	Open the corresponding config file in your favorite text editor adjust your settings and save the file
@@ -49,9 +58,16 @@ For manual measurements, you’ll typically want to change `filename`, `settling
 `measurement_time`: Duration of measurement in minutes  
 `sampling_rate`: Sampling rate in samples per second (Typically 1000)  
 
+### Charging the batteries
+If the batteries ever get completely discharged, you may want to recharge them without ever measuring. When the station
+is in the Ready state, press and hold the record button for 2 seconds to put the station into a charging state.
+Both LEDs should turn on. In this state, the batteries are constantly connected to the charger. To exit this state, 
+simply flip the manual/auto switch to go back to the corresponding mode.  
+Note that under normal operation, this charging mode shouldn't be necessary.
 
 ### Shutting down the station
-When the station is in the Ready state, press and hold the record button for 2 seconds to turn the station off.
+When the station is in the Ready state, press and hold the record button for 2 seconds to put the station into
+it's charging state. Press and hold the button for 2 seconds again to shut down the station.
 Alternatively, connect to the station via SSH, and shut down with 
 sudo shutdown now
 
