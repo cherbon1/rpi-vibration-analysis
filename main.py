@@ -11,8 +11,11 @@ if __name__ == "__main__":
     GPIO.setwarnings(False)
 
     # Check connection to cerberous
-    cerberous_conn = CerberousConnection('/media/vibration')
-    cerberous_conn.mount_network_drive()
+    try:
+        cerberous_conn = CerberousConnection('/media/vibration')
+        cerberous_conn.mount_network_drive()
+    except RuntimeError:
+        pass
 
     # Start logging:
     logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
