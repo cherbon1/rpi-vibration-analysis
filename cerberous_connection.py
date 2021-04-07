@@ -35,7 +35,7 @@ class CerberousConnection:
         os.system('mount {}'.format(self.network_drive_location))
 
         # Check that it was successfully mounted
-        retries = 10
+        retries = 5
         while not self.check_connection():
             log.warning('Network storage was not mounted, will try again')
             time.sleep(2)
