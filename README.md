@@ -27,7 +27,7 @@ will be unable to read the config file on Cerberous, and will default to locally
 1.	Connect the station to power and to the network
 2.	Verify that the accelerometer settings are correct: On, 450Hz, 1000V/g
 3.	Set the control switch to Manual. One LED should be on at all times. If either both or neither are on, something's wrong
-4.	Press the Record button to launch a measurement using the settings found in config_manual.json (See section below on how to edit settings)
+4.	Press the Record button to launch a measurement using the settings found in config_manual.json (See section [Configuration of Measurements](#Configuration-of-measurements) on how to edit settings)
 5.	When you’re done, turn off the accelerometer (switch to off) and shutdown the station (see below)
 6.	Your measurements can be found on Cerberous, in the folder /BuildingVibrations/custom
 
@@ -37,7 +37,7 @@ will be unable to read the config file on Cerberous, and will default to locally
 3.	Choose your accelerometer settings on the front panel
 4.	Use the BNC output at the back of the station to connect your DAQ
 
-###Changing the measurement settings (now obsolete. See Configuration of Measurements above instead)
+### Changing the measurement settings (now obsolete. See [Configuration of Measurements](#Configuration-of-measurements) above instead)
 1.	Connect the station to power and to the network
 2.	Connect to the raspberry pi remotely (via SSH or VNC)
 3.	Open the corresponding config file in your favorite text editor adjust your settings and save the file
