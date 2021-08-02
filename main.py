@@ -48,6 +48,7 @@ if __name__ == "__main__":
         vibration_fsm.run()
     except Exception as e:
         vibration_fsm.indicator_lights.both()  # exits with error: both lights on
+        vibration_fsm.vibration_pi.batteries.charge()  # Put batteries into charging mode
         raise e
 
     vibration_fsm.indicator_lights.off()  # exits normally: both lights off
