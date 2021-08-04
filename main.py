@@ -15,6 +15,7 @@ if __name__ == "__main__":
         cerberous_conn = CerberousConnection('/media/vibration')
         cerberous_conn.mount_network_drive()
     except RuntimeError:
+        log.exception('Cerberous connection failed')
         pass
 
     # Start logging:
@@ -49,6 +50,7 @@ if __name__ == "__main__":
     except Exception as e:
         vibration_fsm.indicator_lights.both()  # exits with error: both lights on
         vibration_fsm.vibration_pi.batteries.charge()  # Put batteries into charging mode
+        log.exception('VibrationFSM failed')
         raise e
 
     vibration_fsm.indicator_lights.off()  # exits normally: both lights off
