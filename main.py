@@ -10,6 +10,11 @@ if __name__ == "__main__":
     # Ignore GPIO warnings
     GPIO.setwarnings(False)
 
+    # Start logging:
+    logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
+        level=logging.INFO,
+        format='%(asctime)s %(message)s')
+
     # Check connection to cerberous
     try:
         cerberous_conn = CerberousConnection('/media/vibration', retries=2)
@@ -18,11 +23,6 @@ if __name__ == "__main__":
         log.info('INFOOOOO: Cerberous connection failed')
         log.exception('Cerberous connection failed')
         pass
-
-    # Start logging:
-    logging.basicConfig(filename='/home/pi/Documents/vibration_logger.log',
-        level=logging.INFO,
-        format='%(asctime)s %(message)s')
 
     # Define config file names
     config_file_auto_name = 'config_auto_d.json'
