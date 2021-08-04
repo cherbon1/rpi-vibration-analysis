@@ -9,8 +9,9 @@ log = logging.getLogger(__name__)
 class CerberousConnection:
     def __init__(self, network_drive_location, retries=5):
         self.network_drive_location = network_drive_location
-        self.connect_to_server()
         self.retries = retries
+
+        self.connect_to_server()
 
     def connect_to_server(self):
         retries = self.retries
