@@ -7,12 +7,13 @@ log = logging.getLogger(__name__)
 
 
 class CerberousConnection:
-    def __init__(self, network_drive_location):
+    def __init__(self, network_drive_location, retries=5):
         self.network_drive_location = network_drive_location
         self.connect_to_server()
+        self.retries = retries
 
     def connect_to_server(self):
-        retries = 10
+        retries = self.retries
         return_val = os.system('ping -c 1 cerberous > /dev/null')  # returns 0 if success, 256 if fail
         while return_val:
             log.warning('Connection to cerberous failed, will try again')
@@ -35,7 +36,7 @@ class CerberousConnection:
         os.system('mount {}'.format(self.network_drive_location))
 
         # Check that it was successfully mounted
-        retries = 5
+        retries = self.retries
         while not self.check_connection():
             log.warning('Network storage was not mounted, will try again')
             time.sleep(2)
