@@ -93,7 +93,7 @@ class VibrationPi:
             # (I don't think it's harmful to call this is client is already open)
 
         if self.write_to in ['h5py', 'both']:
-            self.cerberous = CerberousConnection(self.network_drive)
+            self.cerberous = CerberousConnection(self.network_drive, retries=2)
             # (I don't think it's harmful to call this is CerberousConnection is already open)
 
         # initialize batteries and hat (needs to be done after reading config file, b.c. hat needs meas. duration info)

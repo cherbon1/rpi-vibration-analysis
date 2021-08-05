@@ -42,8 +42,8 @@ class VibrationFSM:
         self.config_file_auto = config_file_auto
         self.config_file_manual = config_file_manual
 
-        # print('Using config files: {} and {}'.format(config_file_auto.split('/')[-1],
-        #                                              config_file_manual.split('/')[-1]))
+        print('Using config files: {} and {}'.format(config_file_auto.split('/')[-1],
+                                                     config_file_manual.split('/')[-1]))
         log.info('Using config files: {} and {}'.format(config_file_auto.split('/')[-1],
                                                         config_file_manual.split('/')[-1]))
 
