@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class CerberousConnection:
-    def __init__(self, network_drive_location, retries=5):
+    def __init__(self, network_drive_location, retries=2):
         self.network_drive_location = network_drive_location
         self.retries = retries
 
@@ -21,7 +21,7 @@ class CerberousConnection:
             retries -= 1
             if not retries:
                 raise RuntimeError('Failed to connect to cerberous')
-            # self.mount_network_drive()
+            self.mount_network_drive()
             time.sleep(5)
 
     @staticmethod

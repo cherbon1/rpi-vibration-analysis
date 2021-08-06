@@ -1,5 +1,6 @@
 import os
 from fsm import VibrationFSM
+from batteries import Batteries
 import RPi.GPIO as GPIO
 from cerberous_connection import CerberousConnection
 
@@ -49,7 +50,8 @@ if __name__ == "__main__":
         vibration_fsm.run()
     except Exception as e:
         log.info('INFOOOO: VibrationFSM failed')
-        vibration_fsm.vibration_pi.batteries.charge()  # Put batteries into charging mode
+        batteries = Batteries()
+        batteries.charge()  # Put batteries into charging mode
         vibration_fsm.indicator_lights.both()  # exits with error: both lights on
         log.exception('VibrationFSM failed')
         raise e
