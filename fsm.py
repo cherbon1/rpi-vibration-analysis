@@ -15,23 +15,26 @@ log = logging.getLogger(__name__)
 
 
 class VibrationFSM:
-    AUTO_MODE_INITIALIZE = 0
-    AUTO_MODE_WAIT = 1
-    AUTO_MODE_MEASURE = 2
+    FIRST_INITIALIZATION = 0
 
-    MANUAL_MODE_INITIALIZE = 3
-    MANUAL_MODE_WAIT = 4
-    MANUAL_MODE_MEASURE = 5
+    AUTO_MODE_INITIALIZE = 1
+    AUTO_MODE_WAIT = 2
+    AUTO_MODE_MEASURE = 3
+
+    MANUAL_MODE_INITIALIZE = 4
+    MANUAL_MODE_WAIT = 5
+    MANUAL_MODE_MEASURE = 6
 
     CHARGE_INITIALIZE = 7
     CHARGE = 8
     SHUTDOWN = 9
-    state_names = {0: 'AUTO_MODE_INITIALIZE',
-               1: 'AUTO_MODE_WAIT',
-               2: 'AUTO_MODE_MEASURE',
-               3: 'MANUAL_MODE_INITIALIZE',
-               4: 'MANUAL_MODE_WAIT',
-               5: 'MANUAL_MODE_MEASURE',
+    state_names = {0: 'FIRST_INITIALIZATION',
+               1: 'AUTO_MODE_INITIALIZE',
+               2: 'AUTO_MODE_WAIT',
+               3: 'AUTO_MODE_MEASURE',
+               4: 'MANUAL_MODE_INITIALIZE',
+               5: 'MANUAL_MODE_WAIT',
+               6: 'MANUAL_MODE_MEASURE',
                7: 'CHARGE_INITIALIZE',
                8: 'CHARGE',
                9: 'SHUTDOWN',
@@ -64,7 +67,7 @@ class VibrationFSM:
 
         # FSM initialization and running
         self.current_state = None
-        self.next_state = self.AUTO_MODE_INITIALIZE
+        self.next_state = self.FIRST_INITIALIZATION
 
         self.vibration_pi = None
 
@@ -84,10 +87,22 @@ class VibrationFSM:
             self.next_state = None
         
             # What needs to be done in current state
-            if self.current_state == self.AUTO_MODE_INITIALIZE:
+            if self.current_state == self.FIRST_INITIALIZATION:
+                self.indicator_lights.both()
+                self.vibration_pi = VibrationPi(self.config_file_auto)
+
+                # If the connection to remote servers failed, go straight to charging mode.
+                if self.vibration_pi.check_connection():
+                    self.next_state = self.AUTO_MODE_WAIT
+                else:
+                    self.next_state = self.CHARGE_INITIALIZE
+                continue
+
+
+            elif self.current_state == self.AUTO_MODE_INITIALIZE:
                 self.indicator_lights.off()
                 self.vibration_pi = VibrationPi(self.config_file_auto)
-        
+
                 self.next_state = self.AUTO_MODE_WAIT
                 continue
         
