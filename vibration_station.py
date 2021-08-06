@@ -94,8 +94,9 @@ class VibrationPi:
 
         if self.write_to in ['h5py', 'both']:
             try:
-                self.cerberous = CerberousConnection(self.network_drive, retries=2)
+                self.cerberous = CerberousConnection(self.network_drive, connect=True, retries=2)
             except RuntimeError:
+                self.cerberous = CerberousConnection(self.network_drive, connect=False, retries=2)
                 log.warning('Connection to Cerberous failed')
             # (I don't think it's harmful to call this is CerberousConnection is already open)
 
