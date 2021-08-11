@@ -6,12 +6,7 @@ To-do:
 - Troubleshoot/fix/test writing to influxDB.
 
 ## Vibration monitoring station: Instructions
-
-[comment]: <> (The vibration station consists of:)
-[comment]: <> (- A Wilcoxon acclerometer and amplifier)
-[comment]: <> (- A Raspberry Pi with a DAQ hat and a relay switch HAT)
-[comment]: <> (- A battery charger and 2 9-volt batteries)
-[comment]: <> (- Custom controls)
+![vibration station control panels](VibrationStation.jpg)
 
 ### Configuration files and output files
 The vibration station loads its measurement parameters from config files stored on Cerberous, a network file storage system hosted in our lab. The recorded data is saved to Cerberous as well. Therefore, if you want to use the built-in DAQ to measure data, **it is imperative that the vibration station has a conenction to the network.**
@@ -34,12 +29,12 @@ Once again, **the station must be connected to the network** or else it won't be
 
 ### Automated measurements of building vibrations at regular intervals
 1.	Connect the station to power and to the network
-2.	Verify that the accelerometer settings are correct: On, `450Hz`, `1000V/g`
+2.	Verify that the accelerometer settings are correct: `On`, `450Hz`, `1000V/g`
 3.	Set the control switch to `Auto` (top position). One LED should be on at all times. If either both or neither are on, something's wrong.
 
 ### Manual measurements using the built-in DAQ
 1.	Connect the station to power and to the network
-2.	Verify that the accelerometer settings are correct: On, `450Hz`, `1000V/g`
+2.	Verify that the accelerometer settings are correct: `On`, `450Hz`, `1000V/g`
 3.	Set the control switch to `Manual`. One LED should be on at all times. If either both or neither are on, something's wrong
 4.	Press the Record button to launch a measurement using the settings found in `config_manual.json` (See section [Configuration of Measurements](#Configuration-of-measurements) on how to edit settings)
 5.	When you’re done, turn off the accelerometer (switch to off) and shutdown the station (see below)
