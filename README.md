@@ -21,11 +21,16 @@ The `BuildingVibration` folder contains 4 main subfolders:
 - `custom` contains manual measurement data
 
 ### Configuration of measurements
-If you want to modify the configuration of a measurement, connect to Cerberous and edit the corresponding file in the `config` folder (auto/manual measurements, d/m floor station).
+If you want to modify the configuration of a measurement, connect to Cerberous and edit the corresponding file in the `config` folder (auto/manual measurements, d/m floor station). Then, toggle the `Auto`/`Manual` switch. This prompts the vibration station to reload its settings from Cerberous. 
 
-The fields to be edited should be self-explanatory. If you want to restore a file to its default state, simply copy the corresponding config file in this repository.
+Once again, **the station must be connected to the network** or else it won't be able to read the config files from or save data to Cerberous.
 
-Once again, **the station must be connected to the network** or else it won't be able to read the config files from or save data to Cerberous
+Most fields to be edited are self-explanatory. The measurement related ones are:
+- `measurement_time`: duration of measurement in minutes
+- `settling_time`: time to wait between button press and start of measurement (mainly relevant for automatic measurements, where the pre-amp needs some time to settle)
+- `sampling_rate`: sampling rate of DAQ in Hz. Going beyond 1000Hz doesn't make much sense since the amplifier low-pass filters at 450Hz.
+If you want to restore a file to its default state, simply copy the corresponding config file in this repository.
+- `measurement_period`: Time between measurements. Only applies to automatic measurements. 
 
 ### Automated measurements of building vibrations at regular intervals
 1.	Connect the station to power and to the network
@@ -50,7 +55,7 @@ Once again, **the station must be connected to the network** or else it won't be
 If the batteries ever get completely discharged, you may want to recharge them without ever measuring. When the station
 is in the `Ready` state, press and hold the record button for 2 seconds to put the station into a charging state.
 Both LEDs should turn on. In this state, the batteries are constantly connected to the charger. To exit this state, 
-simply flip the manual/auto switch to go back to the corresponding mode.  
+toggle the `Auto`/`Manual` switch.  
 Note that under normal operation, this charging mode shouldn't be necessary.
 
 ### Shutting down the station
