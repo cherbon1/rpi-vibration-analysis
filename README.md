@@ -4,6 +4,7 @@ RaspberryPi powered automatic vibration monitoring station.
 
 To-do:
 - Troubleshoot/fix/test writing to influxDB.
+- Consider changing the service to restart automatically on failure with `Restart=always`, see [here](https://serverfault.com/questions/252137/how-to-automatically-restart-a-service-on-failure-in-linux)
 
 ## Vibration monitoring station: Instructions
 ![vibration station control panels](VibrationStation.jpg)
@@ -86,3 +87,24 @@ The log-in details are listed on the group OneNote.
 Requires: [daqhats](https://github.com/mccdaq/daqhats),
 [influxdb-client-python](https://github.com/influxdata/influxdb-client-python), and the usual
 suspects (`numpy`, `h5py`, `scipy`, `pandas`)
+
+### Installing this on a new raspberry pi
+1. Clone this repo somewhere on the raspberry pi's home directory
+2. Create a service file in `/lib/systemd/system/vibration-logging.service` with the following contents:
+```buildoutcfg
+[Unit]
+Description=Logs building vibration to cerberous.
+After=multi-user.target
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/usr/bin/python3 /home/pi/Documents/rpi-vibration-analysis/main.py
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+
+```
+
+3. Enable the service so that it starts automatically at boot with `systemctl enable vibration-logging`
