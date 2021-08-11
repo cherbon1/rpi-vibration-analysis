@@ -214,6 +214,13 @@ class VibrationPi:
             filename = timestamp.strftime('%Y-%m') + '.h5' if self.filename == 'default' else self.filename
             save_to = os.path.join(save_to, filename)
 
+            try:
+                with h5py.File(save_to, 'a') as f:
+                    pass
+            except OSError:
+                log.warning('h5 file {} is busy, data will be saved locally instead'.format(save_to))
+                save_to = os.path.join(self.temp_save_location, filename)
+
             with h5py.File(save_to, 'a') as f:
                 group = timestamp.strftime('%Y-%m-%d')
                 if group not in f:
