@@ -102,6 +102,7 @@ class VibrationFSM:
             elif self.current_state == self.AUTO_MODE_INITIALIZE:
                 self.indicator_lights.off()
                 self.vibration_pi = VibrationPi(self.config_file_auto)
+                self.vibration_pi.update_next_start_time()
 
                 self.next_state = self.AUTO_MODE_WAIT
                 continue

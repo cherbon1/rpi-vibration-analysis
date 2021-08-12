@@ -66,6 +66,10 @@ Alternatively, connect to the station via SSH, and shut down with
 sudo shutdown now
 
 ### Other things you may want to do:
+#### Interrupt a measurement
+There's currently no simple way to do that. If you really care about interrupting a measurement, you should connect to the station remotely, and restart the `vibration-logging` service by running `sudo service vibration-logging restart` in a terminal
+
+
 #### Connect to station remotely
 Connect to the station via SSH (e.g. `ssh pi@raspberry-pi-02.ee.ethz.ch` in a terminal) or via VNC Viewer
 (free app from RealVNC). 
